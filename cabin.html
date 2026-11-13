@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Cabin Thermostat</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:480px;margin:40px auto;padding:0 16px;line-height:1.5;color:#222;background:#fff}
+button{display:block;width:100%;font-size:20px;padding:16px;margin:12px 0;border-radius:10px;border:1px solid #888;background:#f4f4f4;color:#222}
+#eco{background:#2e7d32;color:#fff;border-color:#2e7d32}
+#msg{font-size:18px;margin-top:20px}
+</style>
+</head><body>
+<h1>Cabin thermostat</h1>
+<p>It has warmed up at the cabin. If nobody is there, set the thermostat back to Eco.</p>
+<button id="eco">Set Eco</button>
+<button id="keep">Leave it</button>
+<p id="msg"></p>
+<script>
+const topic = location.hash.slice(1);
+const msg = document.getElementById('msg');
+if (!/^cabin-reply-[A-Za-z0-9_-]+$/.test(topic)) {
+  msg.textContent = 'This link is incomplete. Use the link from the cabin email.';
+  document.querySelectorAll('button').forEach(b => b.disabled = true);
+}
+async function send(answer) {
+  msg.textContent = 'Sending…';
+  try {
+    const r = await fetch('https://ntfy.sh/' + topic, {method: 'POST', body: answer});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    msg.textContent = answer === 'eco'
+      ? 'Got it. The thermostat will switch to Eco within 15 minutes, and you will get a confirmation.'
+      : 'Got it. The thermostat will be left as is.';
+    document.querySelectorAll('button').forEach(b => b.disabled = true);
+  } catch (e) {
+    msg.textContent = 'Could not send (' + e.message + '). Try again, or set it in the Google Home app.';
+  }
+}
+document.getElementById('eco').onclick = () => send('eco');
+document.getElementById('keep').onclick = () => send('keep');
+</script>
+</body></html>
